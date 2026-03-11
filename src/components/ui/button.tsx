@@ -48,10 +48,12 @@ export const Button = <T extends ElementType = "button">(
 
   if (Component === "button") {
     const buttonProps = restProps as ComponentPropsWithoutRef<"button">;
+    const { type, ...otherButtonProps } = buttonProps;
+
     return (
       <button
-        type={buttonProps.type ?? "button"}
-        {...buttonProps}
+        type={type ?? "button"}
+        {...otherButtonProps}
         className={mergedClassName}
       >
         {children}

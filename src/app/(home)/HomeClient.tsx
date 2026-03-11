@@ -49,6 +49,16 @@ function initSceneElements(
   images: HTMLElement[],
   texts: HTMLElement[],
 ) {
+  if (
+    backgrounds.length === 0 ||
+    overlays.length === 0 ||
+    polygons.length === 0 ||
+    images.length === 0 ||
+    texts.length === 0
+  ) {
+    return;
+  }
+
   gsap.set(backgrounds, { autoAlpha: 0, scale: 1.08 });
   gsap.set(backgrounds[0], { autoAlpha: 1, scale: 1 });
 
@@ -178,8 +188,13 @@ export default function HomeClient({ characters }: HomeClientProps) {
         .filter((c) => c.slug?.current)
         .map((c) => ({
           ...c,
-          mainImageUrl: urlFor(c.mainImage).width(1200).quality(90).url(),
+          mainImageUrl: urlFor(c.mainImage)
+            .fit("crop")
+            .width(1200)
+            .quality(90)
+            .url(),
           backgroundImageUrl: urlFor(c.backgroundImage)
+            .fit("crop")
             .width(1920)
             .quality(85)
             .url(),
