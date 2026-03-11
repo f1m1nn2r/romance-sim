@@ -198,7 +198,7 @@ export default function HomeClient({ characters }: HomeClientProps) {
             .width(1920)
             .quality(85)
             .url(),
-          polygonColor: polygonColorBySlug[c.slug.current],
+          polygonColor: polygonColorBySlug[c.slug.current] ?? "#1a1a2e",
         })),
     [characters],
   );
