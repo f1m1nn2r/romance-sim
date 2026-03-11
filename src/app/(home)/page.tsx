@@ -10,11 +10,13 @@ export default function Home() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    ScrollTrigger.create({
+    const trigger = ScrollTrigger.create({
       trigger: "character-section",
       start: "top top",
       // snap: 1,
     });
+
+    return () => trigger.kill();
   }, []);
 
   return (
@@ -92,10 +94,9 @@ export default function Home() {
           >
             <Image
               src="/images/guren.png"
-              alt="나유타 일러스트"
+              alt="홍련 : 흑영 일러스트"
               width={1200}
               height={1200}
-              priority
               className="h-auto w-full object-contain"
             />
             <div className="pointer-events-none absolute inset-x-[16%] bottom-3 h-14 bg-[#0f2340]/55 blur-2xl" />
@@ -136,7 +137,6 @@ export default function Home() {
               alt="세이렌 일러스트"
               width={1200}
               height={1200}
-              priority
               className="h-auto w-full object-contain"
             />
             <div className="pointer-events-none absolute inset-x-[16%] bottom-3 h-14 bg-[#0f2340]/55 blur-2xl" />
