@@ -44,6 +44,7 @@ export default function Home() {
               <br />
               이동 경로, 침입 시기 등을 조사하고 다니는 중. -
             </p>
+            {/* TODO: 상세 페이지 생성 후 onClick 또는 Link로 연결 */}
             <Button>나유타와 시뮬레이션 시작하기</Button>
           </div>
 
@@ -85,6 +86,7 @@ export default function Home() {
               <br />
               검의 천재라 불릴 정도로 압도적인 기량을 자랑한다.
             </p>
+            {/* TODO: 상세 페이지 생성 후 onClick 또는 Link로 연결 */}
             <Button>홍련 : 흑영과 시뮬레이션 시작하기</Button>
           </div>
 
@@ -125,6 +127,7 @@ export default function Home() {
               <br />
               옹알이 같은 소리로 감정을 또렷하게 표현한다.
             </p>
+            {/* TODO: 상세 페이지 생성 후 onClick 또는 Link로 연결 */}
             <Button>리틀 머메이드와 시뮬레이션 시작하기</Button>
           </div>
 
