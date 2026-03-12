@@ -142,11 +142,14 @@ export default function HomeClient({ characters }: HomeClientProps) {
           start: "top top",
           end: "bottom bottom",
           scrub: 0.35,
-          snap: {
-            snapTo: 1 / (items.length - 1),
-            duration: 0.5,
-            delay: 0.1,
-          },
+          snap:
+            items.length > 1
+              ? {
+                  snapTo: 1 / (items.length - 1),
+                  duration: 0.5,
+                  delay: 0.1,
+                }
+              : undefined,
           onUpdate: (self) => {
             const nextIndex = Math.round(self.progress * (items.length - 1));
             if (nextIndex !== currentIndexRef.current) {
@@ -277,7 +280,8 @@ export default function HomeClient({ characters }: HomeClientProps) {
             mainImageUrl={activeItem.mainImageUrl}
             alt={activeItem.name}
             wrapperClassName={`absolute z-10 will-change-transform ${
-              imageClassBySlug[activeItem.slug.current] ?? "right-0 bottom-[-18%]"
+              imageClassBySlug[activeItem.slug.current] ??
+              "right-0 bottom-[-18%]"
             }`}
             imagePriority={activeIndex === 0}
             videoPreload={activeIndex === 0 ? "auto" : "metadata"}

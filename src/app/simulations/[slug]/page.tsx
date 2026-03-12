@@ -19,6 +19,7 @@ const QUERY = `*[_type == "character" && slug.current == $slug][0]{
   "backgroundImageUrl": backgroundImage.asset->url,
   "chapters": *[
     _type == "chapter" && 
+    isPublished == true &&
     (
       character._ref == ^._id || 
       character._ref == string::split(^._id, "drafts.")[1] ||

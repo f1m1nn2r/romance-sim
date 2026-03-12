@@ -26,7 +26,6 @@ type SimulationCharacterClientProps = {
 export default function SimulationCharacterClient({
   character,
 }: SimulationCharacterClientProps) {
-  console.log("데이터 확인:", character);
   return (
     <main className="relative h-screen overflow-hidden bg-[#050d1b] text-[#e6edf6]">
       <div
