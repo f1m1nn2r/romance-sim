@@ -1,4 +1,4 @@
-import HomeClient, { type Character } from "./HomeClient";
+import HomeClient, { type Character } from "./components/home-client";
 import { client } from "@/src/sanity/lib/client";
 
 const QUERY = `*[_type == "character"] | order(displayOrder asc){

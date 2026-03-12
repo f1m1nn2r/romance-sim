@@ -10,14 +10,14 @@ import {structureTool} from 'sanity/structure'
 
 // Go to https://www.sanity.io/docs/api-versioning to learn how API versioning works
 import {apiVersion, dataset, projectId} from './src/sanity/env'
-import {schema} from './src/sanity/schemaTypes'
+import {schema} from './src/sanity/schema-types'
 import {structure} from './src/sanity/structure'
 
 export default defineConfig({
   basePath: '/studio',
   projectId,
   dataset,
-  // Add and edit the content schema in the './sanity/schemaTypes' folder
+  // Add and edit the content schema in the './sanity/schema-types' folder
   schema,
   plugins: [
     structureTool({structure}),
