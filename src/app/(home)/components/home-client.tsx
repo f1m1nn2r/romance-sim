@@ -196,6 +196,10 @@ export default function HomeClient({ characters }: HomeClientProps) {
         { scaleY: 1, autoAlpha: 0.7, duration: 0.5, ease: "power2.out" },
         "-=0.7",
       );
+
+    return () => {
+      tl.kill();
+    };
   }, [activeIndex]);
 
   if (items.length === 0) return <div className="min-h-screen bg-[#061022]" />;
@@ -253,7 +257,7 @@ export default function HomeClient({ characters }: HomeClientProps) {
           {/* 텍스트 정보 */}
           <div
             ref={textRef}
-            className="relative z-11 flex h-full max-w-[520px] flex-col justify-center"
+            className="relative z-[11] flex h-full max-w-[520px] flex-col justify-center"
           >
             <h1 className="text-5xl font-bold">{activeItem.name}</h1>
             <p className="mt-7 mb-10 text-2xl font-medium leading-relaxed whitespace-pre-line">
