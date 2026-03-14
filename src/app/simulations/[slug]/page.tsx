@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { liveClient } from "@/src/sanity/lib/client";
-import SimulationCharacterClient, {
+import SimulationCharacterOverviewClient, {
   type SimulationCharacterItem,
-} from "./components/simulation-character-client";
+} from "./components/simulation-character-overview-client";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -14,9 +14,9 @@ const QUERY = `*[_type == "character" && slug.current == $slug][0]{
   _id,
   name,
   slug,
-  "mainImageUrl": mainImage.asset->url,
+  mainImage,
   "mainVideoUrl": mainVideo.asset->url,
-  "backgroundImageUrl": backgroundImage.asset->url,
+  backgroundImage,
   "chapters": *[
     _type == "chapter" && 
     isPublished == true &&
@@ -48,5 +48,5 @@ export default async function SimulationCharacterPage({ params }: PageProps) {
     notFound();
   }
 
-  return <SimulationCharacterClient character={character} />;
+  return <SimulationCharacterOverviewClient character={character} />;
 }
