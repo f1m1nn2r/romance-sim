@@ -83,17 +83,8 @@ export const dialogueNodeType = defineType({
       title: "선택지",
       type: "array",
       validation: (rule) =>
-        rule.custom((choices, context) => {
-          const document = context.document as { isEnding?: boolean } | undefined;
+        rule.custom((choices) => {
           const choiceCount = Array.isArray(choices) ? choices.length : 0;
-
-          if (document?.isEnding) {
-            return true;
-          }
-
-          if (choiceCount < 1) {
-            return "종료 노드가 아니면 선택지를 최소 1개 이상 입력하세요.";
-          }
 
           if (choiceCount > 4) {
             return "선택지는 최대 4개까지 입력할 수 있습니다.";
@@ -113,20 +104,19 @@ export const dialogueNodeType = defineType({
               type: "string",
               description:
                 "선택지 전용 안정 ID입니다. choice 분리 마이그레이션 시 기준 키로 사용됩니다. 예: hwm10h_001_a",
-              validation: (rule) => rule.required().min(3).max(80),
+              validation: (rule) => rule.min(3).max(80),
             }),
             defineField({
               name: "label",
               title: "선택지 문구",
               type: "string",
-              validation: (rule) => rule.required().min(1).max(200),
+              validation: (rule) => rule.min(1).max(200),
             }),
             defineField({
               name: "isCorrect",
               title: "정답 여부",
               type: "boolean",
               initialValue: false,
-              validation: (rule) => rule.required(),
             }),
             defineField({
               name: "nextNode",
@@ -193,13 +183,13 @@ export const dialogueNodeType = defineType({
     prepare(selection) {
       const { nodeId, chapterKey, chapterRefKey, speakerName, line, media } =
         selection as {
-        nodeId?: string;
-        chapterKey?: string;
-        chapterRefKey?: string;
-        speakerName?: string;
-        line?: string;
-        media?: PreviewValue["media"];
-      };
+          nodeId?: string;
+          chapterKey?: string;
+          chapterRefKey?: string;
+          speakerName?: string;
+          line?: string;
+          media?: PreviewValue["media"];
+        };
 
       return {
         title: `${chapterRefKey ?? chapterKey ?? "chapter"} · ${nodeId ?? "node"}`,

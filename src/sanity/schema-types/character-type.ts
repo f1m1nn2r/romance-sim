@@ -1,4 +1,4 @@
-import { defineField, defineType } from "sanity";
+import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const characterType = defineType({
   name: "character", // sanity 내부 데이터에서 사용
@@ -48,6 +48,99 @@ export const characterType = defineType({
       type: "image",
       options: { hotspot: true },
       validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "expressions",
+      title: "표정/상태 에셋 맵",
+      type: "array",
+      description:
+        "dialogueNode.expressionKey와 연결되는 캐릭터 전용 이미지/영상 목록입니다.",
+      of: [
+        defineArrayMember({
+          name: "expressionAsset",
+          title: "Expression Asset",
+          type: "object",
+          fields: [
+            defineField({
+              name: "key",
+              title: "표정/상태 키",
+              type: "string",
+              description: "예: neutral, proud, sad",
+              validation: (rule) => rule.required().min(1).max(80),
+            }),
+            defineField({
+              name: "label",
+              title: "표시 이름",
+              type: "string",
+              description: "스튜디오에서 구분하기 위한 선택 항목입니다.",
+            }),
+            defineField({
+              name: "image",
+              title: "표정 이미지",
+              type: "image",
+              options: { hotspot: true },
+            }),
+            defineField({
+              name: "video",
+              title: "표정 영상",
+              type: "file",
+              options: {
+                accept: "video/mp4,video/webm",
+              },
+            }),
+          ],
+          preview: {
+            select: {
+              title: "label",
+              key: "key",
+              media: "image",
+            },
+            prepare(selection) {
+              const { title, key, media } = selection as {
+                title?: string;
+                key?: string;
+                media?: unknown;
+              };
+
+              return {
+                title: title ?? key ?? "(표정 에셋)",
+                subtitle: key ? `key: ${key}` : undefined,
+                media,
+              };
+            },
+          },
+        }),
+      ],
+      validation: (rule) =>
+        rule.custom((value) => {
+          if (!Array.isArray(value)) {
+            return true;
+          }
+
+          const seenKeys = new Set<string>();
+
+          for (const item of value) {
+            const key =
+              typeof item === "object" &&
+              item !== null &&
+              "key" in item &&
+              typeof item.key === "string"
+                ? item.key.trim()
+                : "";
+
+            if (!key) {
+              continue;
+            }
+
+            if (seenKeys.has(key)) {
+              return `표정/상태 키 '${key}'가 중복되었습니다.`;
+            }
+
+            seenKeys.add(key);
+          }
+
+          return true;
+        }),
     }),
     defineField({
       name: "introQuote",
