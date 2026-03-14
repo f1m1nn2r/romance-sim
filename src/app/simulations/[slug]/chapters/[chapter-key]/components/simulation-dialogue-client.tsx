@@ -30,8 +30,8 @@ type ChapterCharacter = {
 };
 
 type DialogueChoice = {
-  choiceId: string;
-  label: string;
+  choiceId?: string;
+  label?: string;
   isCorrect: boolean;
   resultLine?: string;
   nextNodeId?: string;
@@ -306,9 +306,9 @@ export default function SimulationDialogueClient({
             {/* 선택지 */}
             {hasMultipleChoices && phase === "choices" && (
               <div className="space-y-3">
-                {choices.map((choice) => (
+                {choices.map((choice, index) => (
                   <Button
-                    key={choice.choiceId}
+                    key={choice.choiceId ?? `choice-${index}`}
                     size="md"
                     onClick={(e) => {
                       e.stopPropagation();
