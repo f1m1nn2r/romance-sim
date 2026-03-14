@@ -316,7 +316,7 @@ export default function SimulationDialogueClient({
                     }}
                     className="mx-auto"
                   >
-                    {choice.label}
+                    {choice.label ?? "선택지"}
                   </Button>
                 ))}
               </div>
