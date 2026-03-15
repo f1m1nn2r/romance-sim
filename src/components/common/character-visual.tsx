@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 
 type CharacterVisualProps = {
   mainVideoUrl?: string;
@@ -13,6 +15,64 @@ type CharacterVisualProps = {
   imagePriority?: boolean;
   videoPreload?: "none" | "metadata" | "auto";
 };
+
+function VideoWithFallback({
+  mainVideoUrl,
+  mainImageUrl,
+  alt,
+  videoClassName,
+  imageClassName,
+  imageWidth,
+  imageHeight,
+  imagePriority,
+  videoPreload,
+}: Required<
+  Pick<
+    CharacterVisualProps,
+    | "mainVideoUrl"
+    | "mainImageUrl"
+    | "alt"
+    | "videoClassName"
+    | "imageClassName"
+    | "imageWidth"
+    | "imageHeight"
+    | "imagePriority"
+    | "videoPreload"
+  >
+>) {
+  const [isVideoReady, setIsVideoReady] = useState(false);
+
+  return (
+    <div className="relative">
+      <Image
+        key={`${mainImageUrl}-fallback`}
+        src={mainImageUrl}
+        alt={alt}
+        width={imageWidth}
+        height={imageHeight}
+        priority={imagePriority}
+        className={`${imageClassName} transition-opacity duration-200 ${isVideoReady ? "opacity-0" : "opacity-100"}`}
+      />
+      <video
+        key={mainVideoUrl}
+        src={mainVideoUrl}
+        autoPlay
+        loop
+        muted
+        playsInline
+        disableRemotePlayback
+        preload={videoPreload}
+        onLoadedData={() => {
+          setIsVideoReady(true);
+        }}
+        onCanPlay={() => {
+          setIsVideoReady(true);
+        }}
+        className={`${videoClassName} absolute inset-0 transition-opacity duration-200 ${isVideoReady ? "opacity-100" : "opacity-0"}`}
+      />
+    </div>
+  );
+}
 
 const CharacterVisual = forwardRef<HTMLDivElement, CharacterVisualProps>(
   (
@@ -33,16 +93,17 @@ const CharacterVisual = forwardRef<HTMLDivElement, CharacterVisualProps>(
     return (
       <div ref={ref} className={wrapperClassName}>
         {mainVideoUrl ? (
-          <video
+          <VideoWithFallback
             key={mainVideoUrl}
-            src={mainVideoUrl}
-            autoPlay
-            loop
-            muted
-            playsInline
-            disableRemotePlayback
-            preload={videoPreload}
-            className={videoClassName}
+            mainVideoUrl={mainVideoUrl}
+            mainImageUrl={mainImageUrl}
+            alt={alt}
+            videoClassName={videoClassName}
+            imageClassName={imageClassName}
+            imageWidth={imageWidth}
+            imageHeight={imageHeight}
+            imagePriority={imagePriority}
+            videoPreload={videoPreload}
           />
         ) : (
           <Image

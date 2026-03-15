@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CharacterVisual from "@/src/components/common/character-visual";
 import { Button } from "@/src/components/ui/button";
-import { urlFor } from "@/src/sanity/lib/image";
+import {
+  getBackgroundImageUrl,
+  getCharacterImageUrl,
+} from "@/src/sanity/lib/image";
 import { SanityImageSource } from "@sanity/image-url/lib/types/types";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -87,8 +90,8 @@ export default function HomeClient({ characters }: HomeClientProps) {
           description: c.description,
           ctaLabel: c.ctaLabel,
           mainVideoUrl: c.mainVideoUrl,
-          mainImageUrl: urlFor(c.mainImage).width(1200).url(),
-          backgroundImageUrl: urlFor(c.backgroundImage).width(1920).url(),
+          mainImageUrl: getCharacterImageUrl(c.mainImage),
+          backgroundImageUrl: getBackgroundImageUrl(c.backgroundImage),
           polygonColor: polygonColorBySlug[c.slug.current] ?? "#1a1a2e",
         })),
     [characters],
@@ -261,7 +264,7 @@ export default function HomeClient({ characters }: HomeClientProps) {
           >
             <h1 className="text-5xl font-bold">{activeItem.name}</h1>
             <p className="mt-7 mb-10 text-2xl font-medium leading-relaxed whitespace-pre-line">
-              {activeItem.introQuote}
+                {activeItem.introQuote}
             </p>
             <p className="mb-10 text-lg leading-relaxed text-[#dbe5f7] whitespace-pre-line">
               {activeItem.description}

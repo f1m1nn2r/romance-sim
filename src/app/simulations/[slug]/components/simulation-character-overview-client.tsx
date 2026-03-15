@@ -1,6 +1,11 @@
 import Link from "next/link";
 import CharacterVisual from "@/src/components/common/character-visual";
 import { Button } from "@/src/components/ui/button";
+import {
+  getBackgroundImageUrl,
+  getCharacterImageUrl,
+} from "@/src/sanity/lib/image";
+import { SanityImageSource } from "@sanity/image-url/lib/types/types";
 
 export type Chapter = {
   _id: string;
@@ -14,34 +19,41 @@ export type SimulationCharacterItem = {
   name: string;
   slug: { current: string };
   mainVideoUrl?: string;
-  backgroundImageUrl: string;
-  mainImageUrl: string;
+  backgroundImage: SanityImageSource;
+  mainImage: SanityImageSource;
   chapters: Chapter[];
 };
 
-type SimulationCharacterClientProps = {
+type SimulationCharacterOverviewClientProps = {
   character: SimulationCharacterItem;
 };
 
-export default function SimulationCharacterClient({
+const imageClassBySlug: Record<string, string> = {
+  nayuta: "max-w-[1000px]",
+  guren: "max-w-[1100px]",
+  siren: "max-w-[950px]",
+};
+
+export default function SimulationCharacterOverviewClient({
   character,
-}: SimulationCharacterClientProps) {
+}: SimulationCharacterOverviewClientProps) {
+  const backgroundImageUrl = getBackgroundImageUrl(character.backgroundImage);
+  const mainImageUrl = getCharacterImageUrl(character.mainImage);
+
   return (
     <main className="relative h-screen overflow-hidden bg-[#050d1b] text-[#e6edf6]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${character.backgroundImageUrl}')` }}
+        style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_45%,rgba(34,61,95,0.34),transparent_45%),linear-gradient(110deg,rgba(6,13,28,0.88)_5%,rgba(7,15,30,0.6)_44%,rgba(2,6,14,0.93)_100%)]" />
 
-      <div className="relative mx-auto flex min-h-screen h-full w-full max-w-[1540px] items-center justify-center px-5 pb-10 sm:px-10 lg:px-16">
+      <div className="relative mx-auto flex min-h-screen h-full w-full max-w-[1540px] items-center justify-center px-5 sm:px-10 lg:px-16">
         <CharacterVisual
           mainVideoUrl={character.mainVideoUrl}
-          mainImageUrl={character.mainImageUrl}
+          mainImageUrl={mainImageUrl}
           alt={`${character.name} 일러스트`}
-          wrapperClassName="pointer-events-none max-w-[1100px]"
-          videoClassName="h-auto w-full object-contain [filter:drop-shadow(0_12px_40px_rgba(0,0,0,0.7))] -mb-35"
-          imageClassName="h-auto w-full object-contain [filter:drop-shadow(0_12px_40px_rgba(0,0,0,0.75))]"
+          wrapperClassName={imageClassBySlug[character.slug.current]}
           imagePriority
           videoPreload="metadata"
         />
