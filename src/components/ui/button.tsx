@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 
-type ButtonSize = "sm" | "md";
+export type ButtonSize = "sm" | "md";
 
 type ButtonOwnProps<T extends ElementType> = {
   as?: T;
@@ -22,13 +22,10 @@ const sizeClassMap: Record<ButtonSize, string> = {
   md: "max-w-[500px]",
 };
 
-export const Button = <T extends ElementType = "button">(
-  props: ButtonProps<T>,
-) => {
-  const { as, children, size = "sm", className, ...restProps } = props;
-
-  const Component = as ?? "button";
-
+export function getButtonClassName(
+  size: ButtonSize = "sm",
+  className?: string,
+) {
   const baseClassName = `
     w-full
     ${sizeClassMap[size]}
@@ -42,7 +39,16 @@ export const Button = <T extends ElementType = "button">(
     text-center
   `;
 
-  const mergedClassName = [baseClassName, className].filter(Boolean).join(" ");
+  return [baseClassName, className].filter(Boolean).join(" ");
+}
+
+export const Button = <T extends ElementType = "button">(
+  props: ButtonProps<T>,
+) => {
+  const { as, children, size = "sm", className, ...restProps } = props;
+
+  const Component = as ?? "button";
+  const mergedClassName = getButtonClassName(size, className);
   const defaultProps =
     Component === "button" ? { type: "button" as const } : {};
 
