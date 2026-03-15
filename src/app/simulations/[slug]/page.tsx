@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { liveClient } from "@/src/sanity/lib/client";
-import SimulationCharacterOverviewClient, {
-  type SimulationCharacterItem,
-} from "./components/simulation-character-overview-client";
+import CharacterChapterOverviewClient, {
+  type CharacterChapterOverviewItem,
+} from "./components/character-chapter-overview-client";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -35,7 +35,7 @@ const QUERY = `*[_type == "character" && slug.current == $slug][0]{
 
 export default async function SimulationCharacterPage({ params }: PageProps) {
   const { slug } = await params;
-  const character = await liveClient.fetch<SimulationCharacterItem | null>(
+  const character = await liveClient.fetch<CharacterChapterOverviewItem | null>(
     QUERY,
     { slug },
     {
@@ -48,5 +48,5 @@ export default async function SimulationCharacterPage({ params }: PageProps) {
     notFound();
   }
 
-  return <SimulationCharacterOverviewClient character={character} />;
+  return <CharacterChapterOverviewClient character={character} />;
 }

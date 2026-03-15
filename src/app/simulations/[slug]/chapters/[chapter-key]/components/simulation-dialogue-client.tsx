@@ -3,12 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CharacterVisual from "@/src/components/common/character-visual";
+import MediaPreloadScreen from "@/src/components/common/media-preload-screen";
 import { Button } from "@/src/components/ui/button";
+import { useMediaPreload } from "@/src/hooks/use-media-preload";
+import { usePressAnimation } from "@/src/hooks/use-press-animation";
+import {
+  getChapterStatus,
+  persistChapterResult,
+  readCharacterProgress,
+  subscribeSimulationProgress,
+  type ProgressChapter,
+} from "@/src/lib/simulation-progress";
 import {
   getBackgroundImageUrl,
   getDialogueImageUrl,
 } from "@/src/sanity/lib/image";
 import { SanityImageSource } from "@sanity/image-url/lib/types/types";
+import ChoiceResultOverlay from "./choice-result-overlay";
 
 // ─── 타입 ────────────────────────────────────────────────────
 
@@ -27,6 +38,7 @@ type ChapterCharacter = {
   mainVideoUrl?: string;
   backgroundImage: SanityImageSource;
   expressions?: CharacterExpressionAsset[];
+  chapters?: ProgressChapter[];
 };
 
 type DialogueChoice = {
@@ -54,6 +66,7 @@ export type SimulationChapterPageData = {
   _id: string;
   title: string;
   chapterKey: string;
+  displayOrder: number;
   description?: string;
   entryNodeId?: string;
   character: ChapterCharacter;
@@ -65,6 +78,14 @@ type SimulationDialogueClientProps = {
 };
 
 type DialoguePhase = "line" | "choices";
+type ChapterAccessState = "loading" | "ready" | "blocked";
+
+type ChoiceResultState = {
+  isCorrect: boolean;
+  title: string;
+  message: string;
+  description: string;
+};
 
 // ─── 상수 ────────────────────────────────────────────────────
 
@@ -124,13 +145,54 @@ export default function SimulationDialogueClient({
   chapter,
 }: SimulationDialogueClientProps) {
   const router = useRouter();
+  const runPressAnimation = usePressAnimation();
   const [visibleLine, setVisibleLine] = useState("");
   const [currentNodeId, setCurrentNodeId] = useState(
     chapter.entryNodeId ?? chapter.nodes[0]?.nodeId,
   );
   const [phase, setPhase] = useState<DialoguePhase>("line");
+  const [chapterAccessState, setChapterAccessState] =
+    useState<ChapterAccessState>("loading");
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [pendingChoiceResult, setPendingChoiceResult] =
+    useState<ChoiceResultState | null>(null);
+  const [choiceResult, setChoiceResult] = useState<ChoiceResultState | null>(
+    null,
+  );
   const typingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const chapterSequence = useMemo(
+    () =>
+      chapter.character.chapters && chapter.character.chapters.length > 0
+        ? chapter.character.chapters
+        : [
+            {
+              chapterKey: chapter.chapterKey,
+              displayOrder: chapter.displayOrder,
+              title: chapter.title,
+            },
+          ],
+    [
+      chapter.character.chapters,
+      chapter.chapterKey,
+      chapter.displayOrder,
+      chapter.title,
+    ],
+  );
+  useEffect(() => {
+    const updateAccessState = () => {
+      const progress = readCharacterProgress(
+        chapter.character.slug,
+        chapterSequence,
+      );
+      const status = getChapterStatus(progress, chapter.chapterKey);
+
+      setChapterAccessState(status === "locked" ? "blocked" : "ready");
+    };
+
+    updateAccessState();
+
+    return subscribeSimulationProgress(updateAccessState);
+  }, [chapter.character.slug, chapter.chapterKey, chapterSequence]);
 
   // 현재 노드 계산
   const nodeMap = useMemo(
@@ -169,6 +231,48 @@ export default function SimulationDialogueClient({
       };
   const imageUrl = getDialogueImageUrl(imageSource);
   const backgroundUrl = getBackgroundImageUrl(backgroundSource);
+  const preloadImageUrls = useMemo(
+    () =>
+      chapter.nodes.flatMap((node) => {
+        const {
+          speaker,
+          imageSource: nodeImageSource,
+          backgroundSource,
+        } = resolveVisualAssets(node, chapter.character);
+        const expressionImageUrls =
+          speaker.expressions?.map((asset) =>
+            asset.image ? getDialogueImageUrl(asset.image) : undefined,
+          ) ?? [];
+
+        return [
+          getDialogueImageUrl(nodeImageSource),
+          getBackgroundImageUrl(backgroundSource),
+          getDialogueImageUrl(speaker.mainImage),
+          ...expressionImageUrls,
+        ];
+      }),
+    [chapter],
+  );
+  const preloadVideoUrls = useMemo(
+    () =>
+      chapter.nodes.flatMap((node) => {
+        const { speaker, videoUrl: resolvedVideoUrl } = resolveVisualAssets(
+          node,
+          chapter.character,
+        );
+
+        return [
+          resolvedVideoUrl,
+          speaker.mainVideoUrl,
+          ...(speaker.expressions?.map((asset) => asset.videoUrl) ?? []),
+        ];
+      }),
+    [chapter],
+  );
+  const { isReady: isMediaReady, progress: preloadProgress } = useMediaPreload({
+    imageUrls: preloadImageUrls,
+    videoUrls: preloadVideoUrls,
+  });
 
   // 핸들러
   const goToNode = (nodeId: string) => {
@@ -179,6 +283,10 @@ export default function SimulationDialogueClient({
   };
 
   const handleStageClick = () => {
+    if (chapterAccessState !== "ready") {
+      return;
+    }
+
     setHasUserInteracted(true);
 
     if (!currentNode) return;
@@ -192,6 +300,28 @@ export default function SimulationDialogueClient({
       return;
     }
     if (currentNode.isEnding) {
+      if (pendingChoiceResult) {
+        if (pendingChoiceResult.isCorrect) {
+          const { nextUnlockedChapter } = persistChapterResult({
+            characterSlug: chapter.character.slug,
+            chapters: chapterSequence,
+            chapterKey: chapter.chapterKey,
+            isCorrect: true,
+          });
+
+          setChoiceResult({
+            ...pendingChoiceResult,
+            description: nextUnlockedChapter
+              ? `다음 챕터 "${nextUnlockedChapter.title ?? nextUnlockedChapter.chapterKey}"가 해금되었습니다.`
+              : "마지막 공개 챕터까지 모두 완료했습니다.",
+          });
+
+          return;
+        }
+
+        setChoiceResult(pendingChoiceResult);
+        return;
+      }
       router.push(`/simulations/${chapter.character.slug}`);
       return;
     }
@@ -200,9 +330,31 @@ export default function SimulationDialogueClient({
     }
   };
 
-  const handleSelectChoice = (nextNodeId?: string) => {
+  const handleSelectChoice = (choice: DialogueChoice) => {
     setHasUserInteracted(true);
-    if (nextNodeId) goToNode(nextNodeId);
+    setPendingChoiceResult(
+      choice.isCorrect
+        ? {
+            isCorrect: true,
+            title: "챕터 클리어",
+            message: `${speaker.name}과 의미 있는 대화를 나눴다.`,
+            description: "",
+          }
+        : {
+            isCorrect: false,
+            title: "",
+            message: `${speaker.name}과 아쉬운 상태로 대화를 마무리했다.\n다음에는 더 좋은 선택을 해보자.`,
+            description: "",
+          },
+    );
+
+    if (choice.nextNodeId) {
+      goToNode(choice.nextNodeId);
+    }
+  };
+
+  const handleResultOverlayClick = () => {
+    router.push(`/simulations/${chapter.character.slug}`);
   };
 
   useEffect(() => {
@@ -256,15 +408,54 @@ export default function SimulationDialogueClient({
     };
   }, [hasUserInteracted, isTyping, phase]);
 
+  useEffect(() => {
+    if (chapterAccessState !== "blocked") {
+      return;
+    }
+
+    router.replace(`/simulations/${chapter.character.slug}`);
+  }, [chapter.character.slug, chapterAccessState, router]);
+
   // 렌더
   if (!currentNode) {
     return <main className="min-h-screen bg-[#050d1b]" />;
+  }
+
+  if (chapterAccessState === "loading") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#000] px-6 text-center text-[#d9e5f4]">
+        <p className="text-sm tracking-[0.18em] text-white/70">
+          챕터 진행 상태를 확인하고 있습니다.
+        </p>
+      </main>
+    );
+  }
+
+  if (chapterAccessState === "blocked") {
+    return <main className="min-h-screen bg-[#020713]" />;
+  }
+
+  if (!isMediaReady) {
+    return (
+      <MediaPreloadScreen
+        loaded={preloadProgress.loaded}
+        total={preloadProgress.total}
+      />
+    );
   }
 
   return (
     <main
       className="relative bg-[#020713] text-[#edf3fb] h-screen overflow-hidden"
       onClick={handleStageClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleStageClick();
+        }
+      }}
     >
       {/* 배경 */}
       <div
@@ -294,7 +485,7 @@ export default function SimulationDialogueClient({
                 <h1 className="mb-4 border-l-4 border-white pl-3 text-2xl font-bold">
                   {speaker.name}
                 </h1>
-                <p className="text-base leading-relaxed whitespace-pre-line text-white/95">
+                <p className="text-base leading-relaxed whitespace-pre-line text-white/95 min-h-[52px]">
                   {visibleLine}
                   {isTyping && (
                     <span className="ml-0.5 inline-block h-[1em] w-[2px] animate-pulse bg-white/75 align-[-0.15em]" />
@@ -312,7 +503,11 @@ export default function SimulationDialogueClient({
                     size="md"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSelectChoice(choice.nextNodeId);
+                      runPressAnimation(e.currentTarget, {
+                        onComplete: () => {
+                          handleSelectChoice(choice);
+                        },
+                      });
                     }}
                     className="mx-auto"
                   >
@@ -324,6 +519,14 @@ export default function SimulationDialogueClient({
           </div>
         </section>
       </div>
+      {choiceResult ? (
+        <ChoiceResultOverlay
+          title={choiceResult.title}
+          message={choiceResult.message}
+          description={choiceResult.description}
+          onClick={handleResultOverlayClick}
+        />
+      ) : null}
     </main>
   );
 }
