@@ -1,37 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web Romance Sim
 
-## Getting Started
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-20232a?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)
+![Sanity](https://img.shields.io/badge/Sanity-CMS-f03e2f?logo=sanity)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?logo=tailwindcss&logoColor=white)
+![GSAP](https://img.shields.io/badge/GSAP-Animation-88ce02)
 
-First, run the development server:
+Next.js와 Sanity를 활용해 CMS 기반 분기형 대화 시스템을 구현한 웹 연애 시뮬레이션 프로젝트입니다.  
+캐릭터 소개 화면에서 인물을 선택하고, 챕터를 선택한 뒤 대사와 선택지를 통해 스토리를 진행할 수 있습니다.
+
+콘텐츠(캐릭터, 챕터, 대화 노드)는 Sanity CMS에서 관리하며, 프론트엔드는 해당 데이터를 기반으로 시뮬레이션 흐름을 동적으로 렌더링합니다.
+
+---
+
+## 주요 기능
+
+### 캐릭터 선택 화면
+
+- 캐릭터 소개 및 미디어 표시
+- GSAP 기반 스크롤 전환 연출
+
+### 챕터 선택
+
+- 캐릭터별 챕터 목록 조회
+- 챕터 선택 후 시뮬레이션 진입
+
+### 시뮬레이션 대화
+
+- 타이핑 효과 기반 대사 출력
+- 선택지에 따른 분기형 대화 구조
+- 캐릭터 표정 및 미디어 교체
+
+### CMS 콘텐츠 관리
+
+- Sanity Studio에서 콘텐츠 관리
+- 코드 수정 없이 스토리/대화 구조 변경 가능
+
+---
+
+## 기술 스택
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Sanity
+- GSAP
+
+## 로컬 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 `http://localhost:3000`으로 확인할 수 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 환경변수
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+아래 값이 필요합니다.
 
-## Learn More
+```bash
+NEXT_PUBLIC_SANITY_PROJECT_ID=
+NEXT_PUBLIC_SANITY_DATASET=
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 주요 경로
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/` : 홈
+- `/simulations/[slug]` : 캐릭터별 챕터 목록
+- `/simulations/[slug]/chapters/[chapter-key]` : 실제 시뮬레이션 진행 화면
+- `/studio` : Sanity Studio
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Sanity 콘텐츠 구조
 
-## Deploy on Vercel
+- `character` : 캐릭터 기본 정보, 대표 이미지/영상, 배경, 표정 세트
+- `chapter` : 캐릭터에 연결된 챕터 정보
+- `dialogueNode` : 대사, 화자, 선택지, 다음 노드 연결
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Preveiw
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# romance-sim
+### 메인 화면
+
+<video src="docs/demo.mp4" controls></video>
