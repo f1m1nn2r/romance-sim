@@ -332,25 +332,29 @@ export default function SimulationDialogueClient({
 
   const handleSelectChoice = (choice: DialogueChoice) => {
     setHasUserInteracted(true);
-    setPendingChoiceResult(
-      choice.isCorrect
-        ? {
-            isCorrect: true,
-            title: "챕터 클리어",
-            message: `${speaker.name}과 의미 있는 대화를 나눴다.`,
-            description: "",
-          }
-        : {
-            isCorrect: false,
-            title: "",
-            message: `${speaker.name}과 아쉬운 상태로 대화를 마무리했다.\n다음에는 더 좋은 선택을 해보자.`,
-            description: "",
-          },
-    );
+
+    const nextResult = choice.isCorrect
+      ? {
+          isCorrect: true,
+          title: "챕터 클리어",
+          message: `${speaker.name}과 의미 있는 대화를 나눴다.`,
+          description: "",
+        }
+      : {
+          isCorrect: false,
+          title: "",
+          message: `${speaker.name}과 아쉬운 상태로 대화를 마무리했다.\n다음에는 더 좋은 선택을 해보자.`,
+          description: "",
+        };
+    setPendingChoiceResult(nextResult);
 
     if (choice.nextNodeId) {
       goToNode(choice.nextNodeId);
+      return;
     }
+
+    // 데이터 누락으로 다음 노드가 없으면 결과 오버레이로 즉시 종료한다.
+    setChoiceResult(nextResult);
   };
 
   const handleResultOverlayClick = () => {
@@ -451,6 +455,7 @@ export default function SimulationDialogueClient({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           handleStageClick();

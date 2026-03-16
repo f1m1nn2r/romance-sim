@@ -79,7 +79,7 @@ NEXT_PUBLIC_SANITY_DATASET=
 - `chapter` : 캐릭터에 연결된 챕터 정보
 - `dialogueNode` : 대사, 화자, 선택지, 다음 노드 연결
 
-## Preveiw
+## Preview
 
 ### 메인 화면
 

@@ -9,7 +9,9 @@ const pendingTasks = new Map<string, Promise<void>>();
 function uniqueUrls(urls: Array<string | undefined | null>) {
   return Array.from(
     new Set(
-      urls.filter((url): url is string => typeof url === "string" && url.length > 0),
+      urls.filter(
+        (url): url is string => typeof url === "string" && url.length > 0,
+      ),
     ),
   );
 }
@@ -87,9 +89,11 @@ function loadWithGlobalCache(
   }
 
   const nextTask = loader(url)
+    .then(() => {
+      cache.add(url);
+    })
     .catch(() => {})
     .finally(() => {
-      cache.add(url);
       pendingTasks.delete(taskKey);
     });
 

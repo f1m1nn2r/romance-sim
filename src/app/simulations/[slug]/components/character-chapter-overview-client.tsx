@@ -3,9 +3,8 @@
 import gsap from "gsap";
 import Link from "next/link";
 import CharacterVisual from "@/src/components/common/character-visual";
-import { useRouter } from "next/navigation";
 import { getButtonClassName } from "@/src/components/ui/button";
-import { usePressAnimation } from "@/src/hooks/use-press-animation";
+import { useAnimatedLinkNavigation } from "@/src/hooks/use-animated-link-navigation";
 import {
   createDefaultCharacterProgress,
   getChapterStatus,
@@ -50,8 +49,7 @@ const imageClassBySlug: Record<string, string> = {
 export default function CharacterChapterOverviewClient({
   character,
 }: CharacterChapterOverviewClientProps) {
-  const router = useRouter();
-  const runPressAnimation = usePressAnimation();
+  const { navigateWithAnimation } = useAnimatedLinkNavigation();
   const characterSlug = character.slug.current;
   const backgroundImageUrl = getBackgroundImageUrl(character.backgroundImage);
   const mainImageUrl = getCharacterImageUrl(character.mainImage);
@@ -142,9 +140,9 @@ export default function CharacterChapterOverviewClient({
                       chapter.chapterKey,
                     );
                     const href = `/simulations/${characterSlug}/chapters/${chapter.chapterKey}`;
-                    const isAvailable = status !== "locked";
+                    const isLocked = status === "locked";
 
-                    if (!isAvailable) {
+                    if (isLocked) {
                       return (
                         <button
                           type="button"
@@ -169,17 +167,10 @@ export default function CharacterChapterOverviewClient({
                         ref={(el) => {
                           if (el) chapterButtonsRef.current[index] = el;
                         }}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          runPressAnimation(event.currentTarget, {
-                            onComplete: () => {
-                              router.push(href);
-                            },
-                          });
-                        }}
+                        onClick={navigateWithAnimation(href)}
                         className={getButtonClassName("sm", "opacity-100")}
                       >
-                        {chapter.title}
+                        <span>{chapter.title}</span>
                       </Link>
                     );
                   })()}

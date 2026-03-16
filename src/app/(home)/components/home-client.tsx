@@ -5,11 +5,11 @@ import ScrollTrigger from "gsap/ScrollTrigger";
 import Link from "next/link";
 import CharacterVisual from "@/src/components/common/character-visual";
 import MediaPreloadScreen from "@/src/components/common/media-preload-screen";
-import { useRouter } from "next/navigation";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getButtonClassName } from "@/src/components/ui/button";
+import { useAnimatedLinkNavigation } from "@/src/hooks/use-animated-link-navigation";
 import { useMediaPreload } from "@/src/hooks/use-media-preload";
-import { usePressAnimation } from "@/src/hooks/use-press-animation";
+import { cn } from "@/src/lib/utils";
 import {
   getBackgroundImageUrl,
   getCharacterImageUrl,
@@ -63,14 +63,19 @@ const imageClassBySlug: Record<string, string> = {
   siren: "right-15 bottom-[-11%] max-w-[1100px]",
 };
 
+const textClassBySlug: Record<string, string> = {
+  nayuta: "text-[var(--color-nayuta-text)]",
+  guren: "text-[var(--color-guren-text)]",
+  siren: "text-[var(--color-siren-text)]",
+};
+
 // ─── 컴포넌트 ────────────────────────────────────────────────
 
 export default function HomeClient({
   characters,
   preloadManifest,
 }: HomeClientProps) {
-  const router = useRouter();
-  const runPressAnimation = usePressAnimation();
+  const { isNavigatingRef, navigateWithAnimation } = useAnimatedLinkNavigation();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -86,8 +91,6 @@ export default function HomeClient({
 
   const currentIndexRef = useRef(0);
   const isTransitioningRef = useRef(false);
-  const isNavigatingRef = useRef(false);
-
   // 1. 데이터 가공
   const items = useMemo<HomeStageItem[]>(
     () =>
@@ -134,7 +137,7 @@ export default function HomeClient({
       duration: 0.3,
       ease: "power2.in",
     }).to(polygonRef.current, { scaleY: 0, duration: 0.3 }, 0);
-  }, []);
+  }, [isNavigatingRef]);
 
   // 3. 메인 ScrollTrigger & MatchMedia (반응형 최적화)
   useLayoutEffect(() => {
@@ -208,7 +211,7 @@ export default function HomeClient({
     return () => {
       tl.kill();
     };
-  }, [activeIndex]);
+  }, [activeIndex, isNavigatingRef]);
 
   if (items.length === 0) return <div className="min-h-screen bg-[#061022]" />;
 
@@ -274,7 +277,10 @@ export default function HomeClient({
           {/* 텍스트 정보 */}
           <div
             ref={textRef}
-            className="relative z-[11] flex h-full max-w-[520px] flex-col justify-center"
+            className={cn(
+              "relative z-[11] flex h-full max-w-[520px] flex-col justify-center",
+              textClassBySlug[activeItem.slug.current],
+            )}
           >
             <h1 className="text-5xl font-bold">{activeItem.name}</h1>
             <p className="mt-7 mb-10 text-2xl font-medium leading-relaxed whitespace-pre-line">
@@ -285,15 +291,9 @@ export default function HomeClient({
             </p>
             <Link
               href={`/simulations/${activeItem.slug.current}`}
-              onClick={(event) => {
-                event.preventDefault();
-                isNavigatingRef.current = true;
-                runPressAnimation(event.currentTarget, {
-                  onComplete: () => {
-                    router.push(`/simulations/${activeItem.slug.current}`);
-                  },
-                });
-              }}
+              onClick={navigateWithAnimation(
+                `/simulations/${activeItem.slug.current}`,
+              )}
               className={getButtonClassName()}
             >
               {activeItem.ctaLabel}

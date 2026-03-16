@@ -20,10 +20,10 @@ export function useMediaPreload({
   imageUrls,
   videoUrls,
 }: MediaPreloadOptions): MediaPreloadState {
-  const manifestKey = useMemo(() => JSON.stringify([imageUrls, videoUrls]), [
-    imageUrls,
-    videoUrls,
-  ]);
+  const manifestKey = useMemo(
+    () => JSON.stringify([imageUrls, videoUrls]),
+    [imageUrls, videoUrls],
+  );
   const requestIdRef = useRef(0);
   const [state, setState] = useState<MediaPreloadState>({
     isReady: false,
@@ -33,11 +33,15 @@ export function useMediaPreload({
   useEffect(() => {
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
+    const [nextImageUrls, nextVideoUrls] = JSON.parse(manifestKey) as [
+      Array<string | undefined | null>,
+      Array<string | undefined | null>,
+    ];
 
     const warmUpMedia = async () => {
       await preloadMediaAssets({
-        imageUrls,
-        videoUrls,
+        imageUrls: nextImageUrls,
+        videoUrls: nextVideoUrls,
         onProgress: (nextProgress) => {
           if (requestIdRef.current === requestId) {
             setState((currentState) => ({
@@ -65,7 +69,7 @@ export function useMediaPreload({
     return () => {
       requestIdRef.current += 1;
     };
-  }, [imageUrls, manifestKey, videoUrls]);
+  }, [manifestKey]);
 
   return state;
 }
