@@ -19,6 +19,7 @@ const QUERY = `*[
   _id,
   title,
   chapterKey,
+  displayOrder,
   description,
   "entryNodeId": coalesce(entryNode->nodeId, *[
     _type == "dialogueNode" &&
@@ -36,6 +37,20 @@ const QUERY = `*[
       label,
       image,
       "videoUrl": video.asset->url
+    },
+    "chapters": *[
+      _type == "chapter" &&
+      isPublished == true &&
+      (
+        character._ref == ^._id ||
+        character._ref == string::split(^._id, "drafts.")[1] ||
+        character._ref == "drafts." + ^._id
+      )
+    ] | order(displayOrder asc) {
+      _id,
+      title,
+      chapterKey,
+      displayOrder
     }
   },
   "nodes": *[

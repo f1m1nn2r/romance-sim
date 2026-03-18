@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import type { PreviewValue } from "sanity";
 
 export const characterType = defineType({
   name: "character", // sanity 내부 데이터에서 사용
@@ -99,7 +100,7 @@ export const characterType = defineType({
               const { title, key, media } = selection as {
                 title?: string;
                 key?: string;
-                media?: unknown;
+                media?: PreviewValue["media"];
               };
 
               return {

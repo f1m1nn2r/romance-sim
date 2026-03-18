@@ -3,9 +3,13 @@
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import Link from "next/link";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CharacterVisual from "@/src/components/common/character-visual";
-import { Button } from "@/src/components/ui/button";
+import MediaPreloadScreen from "@/src/components/common/media-preload-screen";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { getButtonClassName } from "@/src/components/ui/button";
+import { useAnimatedLinkNavigation } from "@/src/hooks/use-animated-link-navigation";
+import { useMediaPreload } from "@/src/hooks/use-media-preload";
+import { cn } from "@/src/lib/utils";
 import {
   getBackgroundImageUrl,
   getCharacterImageUrl,
@@ -28,7 +32,15 @@ export type Character = {
   ctaLabel: string;
 };
 
-type HomeClientProps = { characters: Character[] };
+export type HomePreloadManifest = {
+  imageUrls: string[];
+  videoUrls: string[];
+};
+
+type HomeClientProps = {
+  characters: Character[];
+  preloadManifest: HomePreloadManifest;
+};
 
 type HomeStageItem = {
   _id: string;
@@ -40,26 +52,30 @@ type HomeStageItem = {
   mainVideoUrl?: string;
   mainImageUrl: string;
   backgroundImageUrl: string;
-  polygonColor: string;
+  polygonColorVar: string;
 };
 
 // ─── 상수 ────────────────────────────────────────────────────
 
-const polygonColorBySlug: Record<string, string> = {
-  nayuta: "#2c3a4f",
-  guren: "#3a090f",
-  siren: "#162a30",
-};
-
 const imageClassBySlug: Record<string, string> = {
   nayuta: "right-0 bottom-[-15%] max-w-[1100px]",
   guren: "right-20 bottom-[-12%] max-w-[1100px]",
-  siren: "right-25 bottom-[-15%] max-w-[1050px]",
+  siren: "right-15 bottom-[-11%] max-w-[1100px]",
+};
+
+const textClassBySlug: Record<string, string> = {
+  nayuta: "text-[var(--color-nayuta-text)]",
+  guren: "text-[var(--color-guren-text)]",
+  siren: "text-[var(--color-siren-text)]",
 };
 
 // ─── 컴포넌트 ────────────────────────────────────────────────
 
-export default function HomeClient({ characters }: HomeClientProps) {
+export default function HomeClient({
+  characters,
+  preloadManifest,
+}: HomeClientProps) {
+  const { isNavigatingRef, navigateWithAnimation } = useAnimatedLinkNavigation();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -75,8 +91,6 @@ export default function HomeClient({ characters }: HomeClientProps) {
 
   const currentIndexRef = useRef(0);
   const isTransitioningRef = useRef(false);
-  const isNavigatingRef = useRef(false);
-
   // 1. 데이터 가공
   const items = useMemo<HomeStageItem[]>(
     () =>
@@ -92,10 +106,14 @@ export default function HomeClient({ characters }: HomeClientProps) {
           mainVideoUrl: c.mainVideoUrl,
           mainImageUrl: getCharacterImageUrl(c.mainImage),
           backgroundImageUrl: getBackgroundImageUrl(c.backgroundImage),
-          polygonColor: polygonColorBySlug[c.slug.current] ?? "#1a1a2e",
+          polygonColorVar: `var(--color-${c.slug.current}-secondary, #1a1a2e)`,
         })),
     [characters],
   );
+  const { isReady: isMediaReady, progress: preloadProgress } = useMediaPreload({
+    imageUrls: preloadManifest.imageUrls,
+    videoUrls: preloadManifest.videoUrls,
+  });
 
   // 2. 캐릭터 전환 로직 (Outro -> State Change)
   const transitionToIndex = useCallback((nextIndex: number) => {
@@ -119,52 +137,42 @@ export default function HomeClient({ characters }: HomeClientProps) {
       duration: 0.3,
       ease: "power2.in",
     }).to(polygonRef.current, { scaleY: 0, duration: 0.3 }, 0);
-  }, []);
+  }, [isNavigatingRef]);
 
   // 3. 메인 ScrollTrigger & MatchMedia (반응형 최적화)
   useLayoutEffect(() => {
-    if (!wrapperRef.current || items.length === 0) return;
+    if (!isMediaReady || !wrapperRef.current || items.length === 0) return;
 
-    const mm = gsap.matchMedia();
+    // 초기 세팅
+    gsap.set(polygonRef.current, {
+      scaleY: 1,
+      transformOrigin: "top center",
+      autoAlpha: 0.7,
+    });
 
-    mm.add(
-      {
-        isDesktop: "(min-width: 1024px)",
-        isMobile: "(max-width: 1023px)",
-      },
-      () => {
-        // 초기 세팅
-        gsap.set(polygonRef.current, {
-          scaleY: 1,
-          transformOrigin: "top center",
-          autoAlpha: 0.7,
-        });
-
-        ScrollTrigger.create({
-          trigger: wrapperRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.35,
-          snap:
-            items.length > 1
-              ? {
-                  snapTo: 1 / (items.length - 1),
-                  duration: 0.5,
-                  delay: 0.1,
-                }
-              : undefined,
-          onUpdate: (self) => {
-            const nextIndex = Math.round(self.progress * (items.length - 1));
-            if (nextIndex !== currentIndexRef.current) {
-              transitionToIndex(nextIndex);
+    const trigger = ScrollTrigger.create({
+      trigger: wrapperRef.current,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: 0.35,
+      snap:
+        items.length > 1
+          ? {
+              snapTo: 1 / (items.length - 1),
+              duration: 0.5,
+              delay: 0.1,
             }
-          },
-        });
+          : undefined,
+      onUpdate: (self) => {
+        const nextIndex = Math.round(self.progress * (items.length - 1));
+        if (nextIndex !== currentIndexRef.current) {
+          transitionToIndex(nextIndex);
+        }
       },
-    );
+    });
 
-    return () => mm.revert();
-  }, [items, transitionToIndex]);
+    return () => trigger.kill();
+  }, [isMediaReady, items, transitionToIndex]);
 
   // 4. 캐릭터 등장 애니메이션 (State 변경 시 실행)
   useLayoutEffect(() => {
@@ -203,9 +211,18 @@ export default function HomeClient({ characters }: HomeClientProps) {
     return () => {
       tl.kill();
     };
-  }, [activeIndex]);
+  }, [activeIndex, isNavigatingRef]);
 
   if (items.length === 0) return <div className="min-h-screen bg-[#061022]" />;
+
+  if (!isMediaReady) {
+    return (
+      <MediaPreloadScreen
+        loaded={preloadProgress.loaded}
+        total={preloadProgress.total}
+      />
+    );
+  }
 
   const activeItem = items[activeIndex];
   const prevItem = prevIndex !== null ? items[prevIndex] : null;
@@ -253,31 +270,34 @@ export default function HomeClient({ characters }: HomeClientProps) {
             <div
               ref={polygonRef}
               className="absolute inset-0 will-change-transform"
-              style={{ backgroundColor: activeItem.polygonColor }}
+              style={{ backgroundColor: activeItem.polygonColorVar }}
             />
           </div>
 
           {/* 텍스트 정보 */}
           <div
             ref={textRef}
-            className="relative z-[11] flex h-full max-w-[520px] flex-col justify-center"
+            className={cn(
+              "relative z-[11] flex h-full max-w-[520px] flex-col justify-center",
+              textClassBySlug[activeItem.slug.current],
+            )}
           >
             <h1 className="text-5xl font-bold">{activeItem.name}</h1>
             <p className="mt-7 mb-10 text-2xl font-medium leading-relaxed whitespace-pre-line">
-                {activeItem.introQuote}
+              {activeItem.introQuote}
             </p>
             <p className="mb-10 text-lg leading-relaxed text-[#dbe5f7] whitespace-pre-line">
               {activeItem.description}
             </p>
-            <Button
-              as={Link}
+            <Link
               href={`/simulations/${activeItem.slug.current}`}
-              onClick={() => {
-                isNavigatingRef.current = true;
-              }}
+              onClick={navigateWithAnimation(
+                `/simulations/${activeItem.slug.current}`,
+              )}
+              className={getButtonClassName()}
             >
               {activeItem.ctaLabel}
-            </Button>
+            </Link>
           </div>
 
           {/* 메인 비주얼 (비디오/이미지) */}
