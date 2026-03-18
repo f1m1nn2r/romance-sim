@@ -78,9 +78,3 @@ NEXT_PUBLIC_SANITY_DATASET=
 - `character` : 캐릭터 기본 정보, 대표 이미지/영상, 배경, 표정 세트
 - `chapter` : 캐릭터에 연결된 챕터 정보
 - `dialogueNode` : 대사, 화자, 선택지, 다음 노드 연결
-
-## Preview
-
-### 메인 화면
-
-<video src="docs/home.mp4" controls></video>
