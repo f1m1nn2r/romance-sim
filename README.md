@@ -83,4 +83,4 @@ NEXT_PUBLIC_SANITY_DATASET=
 
 ### 메인 화면
 
-<video src="docs/demo.mp4" controls></video>
+<video src="docs/home.mp4" controls></video>
